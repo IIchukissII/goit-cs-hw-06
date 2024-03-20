@@ -1,11 +1,10 @@
-
 import socket
 from concurrent import futures as cf
 import json
 import mongo_interface as mi
 
 TCP_IP = "localhost"
-TCP_PORT = 8080
+TCP_PORT = 5000
 
 
 def run_server(ip, port):
@@ -41,7 +40,6 @@ def run_server(ip, port):
             print(f"Destroy server")
         finally:
             server_socket.close()
-
 
 
 if __name__ == "__main__":
