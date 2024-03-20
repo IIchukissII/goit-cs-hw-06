@@ -8,9 +8,7 @@ import urllib.parse
 class HttpHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         data = self.rfile.read(int(self.headers['Content-Length']))
-        print(data)
         data_parse = urllib.parse.unquote_plus(data.decode())
-        print(data_parse)
         data_dict = {key: value for key, value in [el.split('=') for el in data_parse.split('&')]}
         print(data_dict)
         self.send_response(302)
@@ -49,7 +47,7 @@ class HttpHandler(BaseHTTPRequestHandler):
 
 
 def run(server_class=HTTPServer, handler_class=HttpHandler):
-    server_address = ('', 8000)
+    server_address = ('', 3000)
     http = server_class(server_address, handler_class)
     try:
         http.serve_forever()
