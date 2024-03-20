@@ -21,7 +21,7 @@ class HttpHandler(BaseHTTPRequestHandler):
         data_dict = {key: value for key, value in [el.split('=') for el in data_parse.split('&')]}
         data_dict["date"] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         print(data_dict)
-        send_message("127.0.0.1", 8080, json.dumps(data_dict))
+        send_message("127.0.0.1", 5000, json.dumps(data_dict))
         self.send_response(302)
         self.send_header("Location", "/")
         self.end_headers()

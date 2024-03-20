@@ -1,7 +1,7 @@
 import socket
 
 TCP_IP = "localhost"
-TCP_PORT = 8080
+TCP_PORT = 5000
 MESSAGE = "Python Web development"
 
 
