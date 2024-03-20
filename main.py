@@ -1,10 +1,13 @@
 import mimetypes
 import json
+import mongo_interface as mi
 from pathlib import Path
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, unquote_plus
-
+from client_TCP_socket import send_message
 from jinja2 import Environment, FileSystemLoader
+from datetime import datetime
+
 
 BASE_DIR = Path(__file__).parent
 jinja = Environment(loader=FileSystemLoader(BASE_DIR.joinpath("templates")))
@@ -14,7 +17,11 @@ class HttpHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         size = self.headers.get("Content-Length")
         data = self.rfile.read(int(size)).decode()
-        print(unquote_plus(data))
+        data_parse = unquote_plus(data)
+        data_dict = {key: value for key, value in [el.split('=') for el in data_parse.split('&')]}
+        data_dict["date"] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        print(data_dict)
+        send_message("127.0.0.1", 8080, json.dumps(data_dict))
         self.send_response(302)
         self.send_header("Location", "/")
         self.end_headers()
@@ -47,8 +54,7 @@ class HttpHandler(BaseHTTPRequestHandler):
         self.send_header("Content-type", "text/html")
         self.end_headers()
 
-        with open('storage/data.json', 'r', encoding='utf-8') as f:
-            content = json.load(f)
+        content = mi.read()
 
         template = jinja.get_template(filename)
         html = template.render(content=content, title="Blog").encode()
@@ -63,7 +69,7 @@ class HttpHandler(BaseHTTPRequestHandler):
             self.wfile.write(f.read())
 
 
-def run(server_class=HTTPServer, handler_class=HttpHandler):
+def run_http_server(server_class=HTTPServer, handler_class=HttpHandler):
     server_address = ('', 3000)
     http = server_class(server_address, handler_class)
     try:
@@ -73,4 +79,4 @@ def run(server_class=HTTPServer, handler_class=HttpHandler):
 
 
 if __name__ == '__main__':
-    run()
+    run_http_server()
