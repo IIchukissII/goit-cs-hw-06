@@ -1,49 +1,66 @@
-
 import mimetypes
-import pathlib
+import json
+from pathlib import Path
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import urllib.parse
+from urllib.parse import urlparse, unquote_plus
+
+from jinja2 import Environment, FileSystemLoader
+
+BASE_DIR = Path(__file__).parent
+jinja = Environment(loader=FileSystemLoader(BASE_DIR.joinpath("templates")))
 
 
 class HttpHandler(BaseHTTPRequestHandler):
     def do_POST(self):
-        data = self.rfile.read(int(self.headers['Content-Length']))
-        data_parse = urllib.parse.unquote_plus(data.decode())
-        data_dict = {key: value for key, value in [el.split('=') for el in data_parse.split('&')]}
-        print(data_dict)
+        size = self.headers.get("Content-Length")
+        data = self.rfile.read(int(size)).decode()
+        print(unquote_plus(data))
         self.send_response(302)
-        self.send_header('Location', '/')
+        self.send_header("Location", "/")
         self.end_headers()
 
     def do_GET(self):
-        pr_url = urllib.parse.urlparse(self.path)
-        if pr_url.path == '/':
-            self.send_html_file('index.html')
-        elif pr_url.path == '/contact':
-            self.send_html_file('contact.html')
-        else:
-            if pathlib.Path().joinpath(pr_url.path[1:]).exists():
-                self.send_static()
-            else:
-                self.send_html_file('error.html', 404)
+        router = urlparse(self.path).path
+        match router:
+            case "/":
+                self.send_html("index.html")
+            case "/message":
+                self.send_html("message.html")
+            case "/blog":
+                self.render_template("blog.jinja")
+            case _:
+                file = BASE_DIR.joinpath(router[1:])
+                if file.exists():
+                    self.send_static(file)
+                else:
+                    self.send_html("error.html", 404)
 
-    def send_html_file(self, filename, status=200):
+    def send_html(self, filename, status=200):
         self.send_response(status)
-        self.send_header('Content-type', 'text/html')
+        self.send_header("Content-type", "text/html")
         self.end_headers()
-        with open(filename, 'rb') as fd:
-            self.wfile.write(fd.read())
+        with open(filename, "rb") as f:
+            self.wfile.write(f.read())
 
-    def send_static(self):
-        self.send_response(200)
-        mt = mimetypes.guess_type(self.path)
-        if mt:
-            self.send_header("Content-type", mt[0])
-        else:
-            self.send_header("Content-type", 'text/plain')
+    def render_template(self, filename, status=200):
+        self.send_response(status)
+        self.send_header("Content-type", "text/html")
         self.end_headers()
-        with open(f'.{self.path}', 'rb') as file:
-            self.wfile.write(file.read())
+
+        with open('storage/data.json', 'r', encoding='utf-8') as f:
+            content = json.load(f)
+
+        template = jinja.get_template(filename)
+        html = template.render(content=content, title="Blog").encode()
+        self.wfile.write(html)
+
+    def send_static(self, filename, status=200):
+        self.send_response(status)
+        mimetype = mimetypes.guess_type(filename)[0] if mimetypes.guess_type(filename)[0] else "text/plain"
+        self.send_header("Content-type", mimetype)
+        self.end_headers()
+        with open(filename, "rb") as f:
+            self.wfile.write(f.read())
 
 
 def run(server_class=HTTPServer, handler_class=HttpHandler):
