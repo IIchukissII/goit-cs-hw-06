@@ -20,7 +20,6 @@ HTTP_HOST = '0.0.0.0'
 SOCKET_HOST = '127.0.0.1'
 SOCKET_PORT = 5000
 jinja = Environment(loader=FileSystemLoader(BASE_DIR.joinpath("templates")))
-chat_db = ChatDB()
 
 
 class CatFramework(BaseHTTPRequestHandler):
@@ -66,7 +65,15 @@ class CatFramework(BaseHTTPRequestHandler):
         self.send_header("Content-type", "text/html")
         self.end_headers()
 
-        content = chat_db.read_all()
+        try:
+            chat_db = ChatDB()
+            content = chat_db.read_all()
+        except ValueError as e:
+            logging.error(f"Parse error: {e}")
+        except Exception as e:
+            logging.error(f"Failed to save: {e}")
+        finally:
+            chat_db.connection.close()
 
         template = jinja.get_template(filename)
         html = template.render(content=content, title="Blog").encode()
@@ -85,11 +92,14 @@ def save_data(data):
     parse_data = unquote_plus(data.decode())
     try:
         parse_data = json.loads(parse_data)
+        chat_db = ChatDB()
         chat_db.create(parse_data)
     except ValueError as e:
         logging.error(f"Parse error: {e}")
     except Exception as e:
         logging.error(f"Failed to save: {e}")
+    finally:
+        chat_db.connection.close()
 
 
 def run_http_server():
