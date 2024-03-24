@@ -3,7 +3,7 @@ from pymongo.mongo_client import MongoClient
 
 
 class ChatDB:
-    def __init__(self, uri="mongodb://goit-cs-hw-06-mongodb-1:27017/", db_name="chat_db"):
+    def __init__(self, uri="mongodb://mongodb:27017/", db_name="chat_db"):
         self.client = MongoClient(uri)
         self.db = self.client[db_name]
         self.collection = self.db.messages
