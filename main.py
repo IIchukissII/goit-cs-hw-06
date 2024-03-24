@@ -12,7 +12,7 @@ from datetime import datetime
 
 from jinja2 import Environment, FileSystemLoader
 
-URI = "mongodb://goit-cs-hw-06-mongodb-1:27017"
+URI = "mongodb://mongodb:27017"
 BASE_DIR = Path(__file__).parent
 BUFFER_SIZE = 1024
 HTTP_PORT = 3000
